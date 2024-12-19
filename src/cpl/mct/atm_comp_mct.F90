@@ -9,8 +9,7 @@ module atm_comp_mct
   use esmf
 
   use seq_comm_mct      , only: seq_comm_inst, seq_comm_name, seq_comm_suffix, num_inst_atm
-  use shr_flds_mod      , only: shr_flds_dom_coord, shr_flds_dom_other
-  use seq_flds_mod      , only: seq_flds_x2a_fields, seq_flds_a2x_fields
+  use seq_flds_mod      , only: seq_flds_x2a_fields, seq_flds_a2x_fields, seq_flds_dom_coord, seq_flds_dom_other
   use seq_infodata_mod
 
   use seq_timemgr_mod   , only: seq_timemgr_EClockGetData
@@ -151,9 +150,13 @@ CONTAINS
     !
     ! Determine cdata points
     !
+!!  call seq_cdata_setptrs(cdata_a, ID=ATMID, mpicom=mpicom_atm, &
+!!       gsMap=gsMap_atm, dom=dom_a, infodata=infodata,          &
+!!       post_assimilation=dart_mode_in)
     call seq_cdata_setptrs(cdata_a, ID=ATMID, mpicom=mpicom_atm, &
-         gsMap=gsMap_atm, dom=dom_a, infodata=infodata,          &
-         post_assimilation=dart_mode_in)
+         gsMap=gsMap_atm, dom=dom_a, infodata=infodata)
+    dart_mode_in = .false.
+
 
     if (first_time) then
 
@@ -202,14 +205,26 @@ CONTAINS
        !FOR now will debug without support for perpetual until this can be resolved
        perpetual_run = .false.
 
+!!     call seq_infodata_GetData( infodata,                                           &
+!!          case_name=caseid, case_desc=ctitle, model_doi_url=model_doi_url,          &
+!!          start_type=start_type,                                                     &
+!!          aqua_planet=aqua_planet,                                                  &
+!!          brnch_retain_casename=brnch_retain_casename,                              &
+!!          single_column=single_column, scmlat=scmlat, scmlon=scmlon,                &
+!!          orb_eccen=eccen, orb_mvelpp=mvelpp, orb_lambm0=lambm0, orb_obliqr=obliqr, &
+!!          perpetual=perpetual_run, perpetual_ymd=perpetual_ymd)
+
        call seq_infodata_GetData( infodata,                                           &
-            case_name=caseid, case_desc=ctitle, model_doi_url=model_doi_url,          &
+            case_name=caseid, case_desc=ctitle,          &
             start_type=start_type,                                                     &
-            aqua_planet=aqua_planet,                                                  &
             brnch_retain_casename=brnch_retain_casename,                              &
             single_column=single_column, scmlat=scmlat, scmlon=scmlon,                &
             orb_eccen=eccen, orb_mvelpp=mvelpp, orb_lambm0=lambm0, orb_obliqr=obliqr, &
             perpetual=perpetual_run, perpetual_ymd=perpetual_ymd)
+
+!!      model_doi_url = 'https://doi.org/10.5065/D67H1H0V'
+        model_doi_url = 'N/A'
+        aqua_planet = .false.
 
        !TODO: the following strings must not be hard-wired - must have module variables
        initial_run = .false.
@@ -661,7 +676,8 @@ CONTAINS
     !
     ! Initialize mct atm domain
     !
-    call mct_gGrid_init( GGrid=dom_a, CoordChars=trim(shr_flds_dom_coord), OtherChars=trim(shr_flds_dom_other), lsize=lsize )
+!!  call mct_gGrid_init( GGrid=dom_a, CoordChars=trim(shr_flds_dom_coord), OtherChars=trim(shr_flds_dom_other), lsize=lsize )
+    call mct_gGrid_init( GGrid=dom_a, CoordChars=trim(seq_flds_dom_coord), OtherChars=trim(seq_flds_dom_other), lsize=lsize )
     !
     ! Allocate memory
     !

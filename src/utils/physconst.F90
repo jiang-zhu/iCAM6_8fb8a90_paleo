@@ -13,7 +13,11 @@ module physconst
                              shr_const_rearth, shr_const_sday,   shr_const_cday,   &
                              shr_const_spval,  shr_const_omega,  shr_const_cpvir,  &
                              shr_const_tktrip, shr_const_cpice
-   use shr_flux_mod,   only: shr_flux_adjust_constants
+
+!! use shr_flux_mod,   only: shr_flux_adjust_constants
+!! ZJ: constant adjustment is only used for simple models?
+!! ZJ: comment out here for simplicity
+
    use ppgrid,         only: pcols, pver, pverp, begchunk, endchunk
    use cam_abortutils, only: endrun
 use constituents,   only: pcnst
@@ -196,7 +200,9 @@ subroutine physconst_readnl(nlfile)
       Cpd_on_Cpv  = cpair/cpwv
 
       ! Adjust constants in shr_flux_mod.
-      call shr_flux_adjust_constants(zvir=zvir, cpvir=cpvir, gravit=gravit)
+!!    call shr_flux_adjust_constants(zvir=zvir, cpvir=cpvir, gravit=gravit)
+!! ZJ: constant adjustment is only used for simple models?
+!! ZJ: comment out here for simplicity
 
    else
       ez          = omega / sqrt(0.375_r8)
