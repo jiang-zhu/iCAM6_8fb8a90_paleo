@@ -224,6 +224,7 @@ real(r8) :: xxls_squared
 
 character(len=16)  :: micro_mg_precip_frac_method  ! type of precipitation fraction method
 real(r8)           :: micro_mg_berg_eff_factor     ! berg efficiency factor
+real(r8)           :: micro_mg_max_nicons
 
 logical  :: allow_sed_supersat ! Allow supersaturated conditions after sedimentation loop
 logical  :: do_sb_physics ! do SB 2001 autoconversion or accretion physics
@@ -857,6 +858,8 @@ subroutine micro_mg_tend ( &
 
   ! assign variable deltat to deltatin
   deltat = deltatin
+
+  micro_mg_max_nicons=1000.e3_r8
 
   ! Copies of input concentrations that may be changed internally.
   qc = qcn
@@ -2024,9 +2027,9 @@ subroutine micro_mg_tend ( &
         ! note that currently mtime = deltat
         !================================================================
 
-        if (do_cldice .and. nitend(i,k).gt.0._r8.and.ni(i,k)+nitend(i,k)*deltat.gt.nimax(i,k)) then
-           nitend(i,k)=max(0._r8,(nimax(i,k)-ni(i,k))/deltat)
-        end if
+       !if (do_cldice .and. nitend(i,k).gt.0._r8.and.ni(i,k)+nitend(i,k)*deltat.gt.nimax(i,k)) then
+       !   nitend(i,k)=max(0._r8,(nimax(i,k)-ni(i,k))/deltat)
+       !end if
 
      end do
 
@@ -2773,6 +2776,16 @@ subroutine micro_mg_tend ( &
            end if
         enddo 
      enddo 
+
+     ! ice number limiter
+     do k=1,nlev
+        do i=1,mgncol
+           if (do_cldice .and. nitend(i,k).gt.0._r8.and.ni(i,k)+nitend(i,k)*deltat.gt.micro_mg_max_nicons*icldm(i,k)/rho(i,k)) then
+              nitend(i,k)=max(0._r8,(micro_mg_max_nicons*icldm(i,k)/rho(i,k)-ni(i,k))/deltat)
+           end if
+        end do
+     end do
+
      ! remove any excess over-saturation, which is possible due to non-linearity when adding
      ! together all microphysical processes
      !-----------------------------------------------------------------
