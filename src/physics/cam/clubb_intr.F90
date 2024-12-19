@@ -2214,7 +2214,7 @@ end subroutine clubb_init_cnst
 
       ! Initialize clubbtop with the chemistry topopause top, to prevent CLUBB from
       !  firing up in the stratosphere 
-      clubbtop = troplev(i)
+      clubbtop = top_lev
       do while ((rtp2(i,clubbtop) .le. 1.e-15_r8 .and. rcm(i,clubbtop) .eq. 0._r8) .and. clubbtop .lt. pver-1)
          clubbtop = clubbtop + 1
       enddo    
