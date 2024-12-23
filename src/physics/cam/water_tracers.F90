@@ -122,6 +122,7 @@ module water_tracers
   public :: wtrc_chem_ch4ox_tend  ! methane oxidation tendency for water tracers/isotopes.
   public :: wtrc_rad_decay        ! updates mass of water tracers/isotopes due to radioactive decay (only impacts HTO currently).
   public :: wtrc_eff_sat          ! calculates the "effective" relative humidity to use when calculating kinetic fractionation.
+  public :: wtrc_prec_fixer
 !  public :: wtrc_rescale          ! scaler routine
 
   ! Diagnostics
@@ -189,7 +190,7 @@ subroutine wtrc_readnl(nlfile)
       wtrc_type_names, wtrc_srfvap_names, wtrc_srfpcp_names, &
       wtrc_tag_names, wtrc_alpha_kinetic, wtrc_check_total_h2o, &
       wtrc_detrain_in_macrop, wtrc_niter, wtrc_citer, wtrc_qmin, wtrc_check_show_types, &
-      wtrc_fixed_alpha, wtrc_fixed_rstd, wtrc_lzmlin, wtrc_use_ice_supsat
+      wtrc_fixed_alpha, wtrc_fixed_rstd, wtrc_lzmlin, wtrc_use_ice_supsat,wtrc_prec_exprt_fix
 
 
      if (masterproc) then
@@ -205,6 +206,9 @@ subroutine wtrc_readnl(nlfile)
        close(unitn)
        call freeunit(unitn)
      end if
+
+     write(iulog,*) 'Correct isotopic precip. exported to the coupler? wtrc_prec_exprt_fix = ', wtrc_prec_exprt_fix
+
 
 #ifdef SPMD
     call mpibcast(trace_water,            1,                    mpilog,  0, mpicom)
@@ -232,6 +236,7 @@ subroutine wtrc_readnl(nlfile)
     call mpibcast(wtrc_srfvap_names,      len(wtrc_srfvap_names(1))*WTRC_MAX_CNST,  mpichar, 0, mpicom)
     call mpibcast(wtrc_srfpcp_names,      len(wtrc_srfpcp_names(1))*WTRC_MAX_CNST,  mpichar, 0, mpicom)
     call mpibcast(wtrc_tag_names,         len(wtrc_tag_names(1))*WTRC_MAX_CNST,     mpichar, 0, mpicom)
+    call mpibcast(wtrc_prec_exprt_fix,    1,                    mpilog,  0, mpicom)
 #endif
 end subroutine wtrc_readnl
 
@@ -7808,6 +7813,33 @@ end function wtrc_get_rao2
    end if
 
  end subroutine wtrc_init_cnst
+
+!=======================================================================
+ subroutine wtrc_prec_fixer(ispec, prec_iso, prec_16o, prec_blk, prec_fix)
+!-----------------------------------------------------------------------
+! Purpose: Correct the isotopic precip. using the bulk value to ensure
+!          isotopic water conservation to the same level as the bulk water
+!          Apply limiter to prevent bad values from affecting other components
+!-----------------------------------------------------------------------
+    integer,intent(in)   :: ispec       ! isotopic species
+    real(r8),intent(in)  :: prec_blk    ! bulk precipitation
+    real(r8),intent(in)  :: prec_16o    ! h216o precipitation
+    real(r8),intent(in)  :: prec_iso    ! isotopic precipitation to be fixed
+    real(r8),intent(out) :: prec_fix    ! fixed isotopic precipitation
+!-----------------------------------------------------------------------
+    real(r8) :: R                       ! ratio between isotopic and h216o
+!-----------------------------------------------------------------------
+
+    ! precipitation fixer based on bulk water
+    R = wtrc_ratio(ispec, prec_iso, prec_16o)
+    prec_fix = prec_iso - R * (prec_16o - prec_blk)
+
+    ! limiter on the delta/ratio value
+    if ((prec_fix > 1.5_r8*prec_16o) .or. (prec_fix < 0.2_r8*prec_16o)) then
+        prec_fix = prec_16o
+    end if
+
+ end subroutine wtrc_prec_fixer
 
 
 end module water_tracers

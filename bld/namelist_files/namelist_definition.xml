@@ -4838,6 +4838,15 @@ test pruposes.
 Default: 1.0
 </entry>
 
+<entry id="wtrc_prec_exprt_fix" type="logical"  category="water_tracers"
+    group="water_tracer_nl" valid_values=".true.,.false.">
+Flag to correct the isotopic precip. using the bulk value to ensure
+isotopic water conservation to the same level as the bulk water.
+Apply limiter to prevent bad values from affecting other components.
+This takes effect in atm_export.F90.
+Default: .true.
+</entry>
+
 <!-- Test Tracers -->
 
 <entry id="test_tracer_names" type="char*16(30)" category="test_tracers"

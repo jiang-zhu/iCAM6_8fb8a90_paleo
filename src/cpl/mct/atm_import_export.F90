@@ -285,8 +285,8 @@ contains
 
     !Water isotopes:
     use water_tracer_vars, only: wtrc_nsrfvap, wtrc_iasrfvap, wtrc_indices, wtrc_species, &
-                                 trace_water
-    use water_tracers    , only: wtrc_ratio
+                                 trace_water, wtrc_prec_exprt_fix
+    use water_tracers    , only: wtrc_ratio, wtrc_prec_fixer
     use water_isotopes   , only: isph2o, isph216o, isphdo, isph218o, isph217o, isphto
 
     !
@@ -301,6 +301,7 @@ contains
     integer :: i,j,m,c,n,ig       ! indices
     integer :: ncols            ! Number of columns
     integer :: nstep
+    real(r8) :: ptmp_blk, ptmp_16o, ptmp_fix
 
     !water tracers:
     logical :: pass16, passD, pass18, pass17, passT !logicals that prevent the passing of water tag info to surface comps.
@@ -390,26 +391,105 @@ contains
           !----------------------
           if(trace_water) then
           !NOTE:  converting m/s to kg/m2/s here too(may need to convert snow to equiv. water???):
-            a2x(index_a2x_Faxa_rainl_16O,ig)=cam_out(c)%precrl_16O(i)*1000._r8
-            a2x(index_a2x_Faxa_snowl_16O,ig)=cam_out(c)%precsl_16O(i)*1000._r8
-            a2x(index_a2x_Faxa_rainc_16O,ig)=cam_out(c)%precrc_16O(i)*1000._r8
-            a2x(index_a2x_Faxa_snowc_16O,ig)=cam_out(c)%precsc_16O(i)*1000._r8
-            a2x(index_a2x_Faxa_rainl_HDO,ig)=cam_out(c)%precrl_HDO(i)*1000._r8
-            a2x(index_a2x_Faxa_snowl_HDO,ig)=cam_out(c)%precsl_HDO(i)*1000._r8
-            a2x(index_a2x_Faxa_rainc_HDO,ig)=cam_out(c)%precrc_HDO(i)*1000._r8
-            a2x(index_a2x_Faxa_snowc_HDO,ig)=cam_out(c)%precsc_HDO(i)*1000._r8
-            a2x(index_a2x_Faxa_rainl_18O,ig)=cam_out(c)%precrl_18O(i)*1000._r8
-            a2x(index_a2x_Faxa_snowl_18O,ig)=cam_out(c)%precsl_18O(i)*1000._r8
-            a2x(index_a2x_Faxa_rainc_18O,ig)=cam_out(c)%precrc_18O(i)*1000._r8
-            a2x(index_a2x_Faxa_snowc_18O,ig)=cam_out(c)%precsc_18O(i)*1000._r8
-            a2x(index_a2x_Faxa_rainl_17O,ig)=cam_out(c)%precrl_17O(i)*1000._r8
-            a2x(index_a2x_Faxa_snowl_17O,ig)=cam_out(c)%precsl_17O(i)*1000._r8
-            a2x(index_a2x_Faxa_rainc_17O,ig)=cam_out(c)%precrc_17O(i)*1000._r8
-            a2x(index_a2x_Faxa_snowc_17O,ig)=cam_out(c)%precsc_17O(i)*1000._r8
-            a2x(index_a2x_Faxa_rainl_HTO,ig)=cam_out(c)%precrl_HTO(i)*1000._r8
-            a2x(index_a2x_Faxa_snowl_HTO,ig)=cam_out(c)%precsl_HTO(i)*1000._r8
-            a2x(index_a2x_Faxa_rainc_HTO,ig)=cam_out(c)%precrc_HTO(i)*1000._r8
-            a2x(index_a2x_Faxa_snowc_HTO,ig)=cam_out(c)%precsc_HTO(i)*1000._r8
+            if (wtrc_prec_exprt_fix) then
+              ! rainc
+              ptmp_blk = (cam_out(c)%precc(i)-cam_out(c)%precsc(i))
+              ptmp_16o = cam_out(c)%precrc_16O(i)
+
+              call wtrc_prec_fixer(2, cam_out(c)%precrc_16O(i), ptmp_16o, ptmp_blk, ptmp_fix)
+              a2x(index_a2x_Faxa_rainc_16O,ig) = ptmp_fix * 1000._r8
+
+              call wtrc_prec_fixer(3, cam_out(c)%precrc_HDO(i), ptmp_16o, ptmp_blk, ptmp_fix)
+              a2x(index_a2x_Faxa_rainc_HDO,ig) = ptmp_fix * 1000._r8
+
+              call wtrc_prec_fixer(4, cam_out(c)%precrc_18O(i), ptmp_16o, ptmp_blk, ptmp_fix)
+              a2x(index_a2x_Faxa_rainc_18O,ig) = ptmp_fix * 1000._r8
+
+              call wtrc_prec_fixer(5, cam_out(c)%precrc_17O(i), ptmp_16o, ptmp_blk, ptmp_fix)
+              a2x(index_a2x_Faxa_rainc_17O,ig) = ptmp_fix * 1000._r8
+
+              call wtrc_prec_fixer(6, cam_out(c)%precrc_HTO(i), ptmp_16o, ptmp_blk, ptmp_fix)
+              a2x(index_a2x_Faxa_rainc_HTO,ig) = ptmp_fix * 1000._r8
+
+              ! rainl
+              ptmp_blk = (cam_out(c)%precl(i)-cam_out(c)%precsl(i))
+              ptmp_16o = cam_out(c)%precrl_16O(i)
+
+              call wtrc_prec_fixer(2, cam_out(c)%precrl_16O(i), ptmp_16o, ptmp_blk, ptmp_fix)
+              a2x(index_a2x_Faxa_rainl_16O,ig) = ptmp_fix * 1000._r8
+
+              call wtrc_prec_fixer(3, cam_out(c)%precrl_HDO(i), ptmp_16o, ptmp_blk, ptmp_fix)
+              a2x(index_a2x_Faxa_rainl_HDO,ig) = ptmp_fix * 1000._r8
+
+              call wtrc_prec_fixer(4, cam_out(c)%precrl_18O(i), ptmp_16o, ptmp_blk, ptmp_fix)
+              a2x(index_a2x_Faxa_rainl_18O,ig) = ptmp_fix * 1000._r8
+
+              call wtrc_prec_fixer(5, cam_out(c)%precrl_17O(i), ptmp_16o, ptmp_blk, ptmp_fix)
+              a2x(index_a2x_Faxa_rainl_17O,ig) = ptmp_fix * 1000._r8
+
+              call wtrc_prec_fixer(6, cam_out(c)%precrl_HTO(i), ptmp_16o, ptmp_blk, ptmp_fix)
+              a2x(index_a2x_Faxa_rainl_HTO,ig) = ptmp_fix * 1000._r8
+
+              ! snowc
+              ptmp_blk = cam_out(c)%precsc(i)
+              ptmp_16o = cam_out(c)%precsc_16O(i)
+
+              call wtrc_prec_fixer(2, cam_out(c)%precsc_16O(i), ptmp_16o, ptmp_blk, ptmp_fix)
+              a2x(index_a2x_Faxa_snowc_16O,ig) = ptmp_fix * 1000._r8
+
+              call wtrc_prec_fixer(3, cam_out(c)%precsc_HDO(i), ptmp_16o, ptmp_blk, ptmp_fix)
+              a2x(index_a2x_Faxa_snowc_HDO,ig) = ptmp_fix * 1000._r8
+
+              call wtrc_prec_fixer(4, cam_out(c)%precsc_18O(i), ptmp_16o, ptmp_blk, ptmp_fix)
+              a2x(index_a2x_Faxa_snowc_18O,ig) = ptmp_fix * 1000._r8
+
+              call wtrc_prec_fixer(5, cam_out(c)%precsc_17O(i), ptmp_16o, ptmp_blk, ptmp_fix)
+              a2x(index_a2x_Faxa_snowc_17O,ig) = ptmp_fix * 1000._r8
+
+              call wtrc_prec_fixer(6, cam_out(c)%precsc_HTO(i), ptmp_16o, ptmp_blk, ptmp_fix)
+              a2x(index_a2x_Faxa_snowc_HTO,ig) = ptmp_fix * 1000._r8
+
+              ! snowl
+              ptmp_blk = cam_out(c)%precsl(i)
+              ptmp_16o = cam_out(c)%precsl_16O(i)
+
+              call wtrc_prec_fixer(2, cam_out(c)%precsl_16O(i), ptmp_16o, ptmp_blk, ptmp_fix)
+              a2x(index_a2x_Faxa_snowl_16O,ig) = ptmp_fix * 1000._r8
+
+              call wtrc_prec_fixer(3, cam_out(c)%precsl_HDO(i), ptmp_16o, ptmp_blk, ptmp_fix)
+              a2x(index_a2x_Faxa_snowl_HDO,ig) = ptmp_fix * 1000._r8
+
+              call wtrc_prec_fixer(4, cam_out(c)%precsl_18O(i), ptmp_16o, ptmp_blk, ptmp_fix)
+              a2x(index_a2x_Faxa_snowl_18O,ig) = ptmp_fix * 1000._r8
+
+              call wtrc_prec_fixer(5, cam_out(c)%precsl_17O(i), ptmp_16o, ptmp_blk, ptmp_fix)
+              a2x(index_a2x_Faxa_snowl_17O,ig) = ptmp_fix * 1000._r8
+
+              call wtrc_prec_fixer(6, cam_out(c)%precsl_HTO(i), ptmp_16o, ptmp_blk, ptmp_fix)
+              a2x(index_a2x_Faxa_snowl_HTO,ig) = ptmp_fix * 1000._r8
+
+            else
+              a2x(index_a2x_Faxa_rainl_16O,ig)=cam_out(c)%precrl_16O(i)*1000._r8
+              a2x(index_a2x_Faxa_snowl_16O,ig)=cam_out(c)%precsl_16O(i)*1000._r8
+              a2x(index_a2x_Faxa_rainc_16O,ig)=cam_out(c)%precrc_16O(i)*1000._r8
+              a2x(index_a2x_Faxa_snowc_16O,ig)=cam_out(c)%precsc_16O(i)*1000._r8
+              a2x(index_a2x_Faxa_rainl_HDO,ig)=cam_out(c)%precrl_HDO(i)*1000._r8
+              a2x(index_a2x_Faxa_snowl_HDO,ig)=cam_out(c)%precsl_HDO(i)*1000._r8
+              a2x(index_a2x_Faxa_rainc_HDO,ig)=cam_out(c)%precrc_HDO(i)*1000._r8
+              a2x(index_a2x_Faxa_snowc_HDO,ig)=cam_out(c)%precsc_HDO(i)*1000._r8
+              a2x(index_a2x_Faxa_rainl_18O,ig)=cam_out(c)%precrl_18O(i)*1000._r8
+              a2x(index_a2x_Faxa_snowl_18O,ig)=cam_out(c)%precsl_18O(i)*1000._r8
+              a2x(index_a2x_Faxa_rainc_18O,ig)=cam_out(c)%precrc_18O(i)*1000._r8
+              a2x(index_a2x_Faxa_snowc_18O,ig)=cam_out(c)%precsc_18O(i)*1000._r8
+              a2x(index_a2x_Faxa_rainl_17O,ig)=cam_out(c)%precrl_17O(i)*1000._r8
+              a2x(index_a2x_Faxa_snowl_17O,ig)=cam_out(c)%precsl_17O(i)*1000._r8
+              a2x(index_a2x_Faxa_rainc_17O,ig)=cam_out(c)%precrc_17O(i)*1000._r8
+              a2x(index_a2x_Faxa_snowc_17O,ig)=cam_out(c)%precsc_17O(i)*1000._r8
+              a2x(index_a2x_Faxa_rainl_HTO,ig)=cam_out(c)%precrl_HTO(i)*1000._r8
+              a2x(index_a2x_Faxa_snowl_HTO,ig)=cam_out(c)%precsl_HTO(i)*1000._r8
+              a2x(index_a2x_Faxa_rainc_HTO,ig)=cam_out(c)%precrc_HTO(i)*1000._r8
+              a2x(index_a2x_Faxa_snowc_HTO,ig)=cam_out(c)%precsc_HTO(i)*1000._r8
+            end if
           end if
           !----------------------
 

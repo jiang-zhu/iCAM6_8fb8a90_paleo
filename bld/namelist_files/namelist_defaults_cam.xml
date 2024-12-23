@@ -1815,6 +1815,8 @@
 <wtrc_add_stprecip                 >.true. </wtrc_add_stprecip>
 <wtrc_add_stprecip microphys="mg2" >.false.</wtrc_add_stprecip>
 
+<wtrc_prec_exprt_fix>.true.</wtrc_prec_exprt_fix>
+
 <!-- ================================================================== -->
 <!-- Defaults for SE                                                    -->
 <!-- ================================================================== -->

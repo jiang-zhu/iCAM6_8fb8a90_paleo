@@ -53,6 +53,8 @@ integer, parameter, public    :: WTRC_WSET_STD  = 1     ! water set index for "r
   real(r8), public   :: wtrc_fixed_alpha(pwtspec) = 1._r8       ! default standard fractionation factor, used when wisotope is false
   real(r8), public   :: wtrc_fixed_rstd(pwtspec)  = 1._r8       ! default standard isotope ratio, used when wisotope is false
 
+  logical, public :: wtrc_prec_exprt_fix = .true.  ! flag to correct the isotopic precipitation exported to the coupler
+
   character(len=32), public      :: water_tracer_model = "none"
 
 !
