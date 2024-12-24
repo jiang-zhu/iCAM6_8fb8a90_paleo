@@ -44,17 +44,6 @@
 <prescribed_strataero_use_chemtrop>  .true.                                                       </prescribed_strataero_use_chemtrop>
 <prescribed_strataero_type>          'CYCLICAL'                                                   </prescribed_strataero_type>
 
-<ext_frc_specifier>
-  'H2O    ->  $INPUTDATA_ROOT/atm/cam/chem/emis/elev/H2O_emission_CH4_oxidationx2_elev_3DmonthlyL70_1850climoCMIP6piControl001_y21-50avg_c180802.nc',
-  'num_a1 ->  $INPUTDATA_ROOT/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_num_so4_a1_anthro-ene_vertical_1750-2015_0.9x1.25_c20170616.nc',
-  'num_a1 ->  $INPUTDATA_ROOT/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_num_a1_so4_contvolcano_vertical_850-5000_0.9x1.25_c20170724.nc',
-  'num_a2 ->  $INPUTDATA_ROOT/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_num_a2_so4_contvolcano_vertical_850-5000_0.9x1.25_c20170724.nc',
-  'SO2    ->  $INPUTDATA_ROOT/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_SO2_contvolcano_vertical_850-5000_0.9x1.25_c20170724.nc',
-  'so4_a1 ->  $INPUTDATA_ROOT/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_so4_a1_anthro-ene_vertical_1750-2015_0.9x1.25_c20170616.nc',
-  'so4_a1 ->  $INPUTDATA_ROOT/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_so4_a1_contvolcano_vertical_850-5000_0.9x1.25_c20170724.nc',
-  'so4_a2 ->  $INPUTDATA_ROOT/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_so4_a2_contvolcano_vertical_850-5000_0.9x1.25_c20170724.nc'
-</ext_frc_specifier>
-
 <!-- sim_year used for CLM datasets and SSTs forcings -->
 <sim_year>   1850   </sim_year>
 
