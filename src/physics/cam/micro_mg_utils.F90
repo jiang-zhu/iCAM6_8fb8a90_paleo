@@ -687,10 +687,12 @@ end subroutine ice_deposition_sublimation
 ! minimum qc of 1 x 10^-8 prevents floating point error
 
 subroutine kk2000_liq_autoconversion(microp_uniform, qcic, &
-     ncic, rho, relvar, prc, nprc, nprc1, mgncol)
+     ncic, rho, relvar, prc, nprc, nprc1, micro_mg_autocon_fact, &
+     micro_mg_autocon_nd_exp, micro_mg_autocon_lwp_exp, mgncol)
 
   integer, intent(in) :: mgncol
   logical, intent(in) :: microp_uniform
+  real(r8), intent(in) :: micro_mg_autocon_fact, micro_mg_autocon_nd_exp, micro_mg_autocon_lwp_exp
 
   real(r8), dimension(mgncol), intent(in) :: qcic
   real(r8), dimension(mgncol), intent(in) :: ncic
@@ -707,7 +709,7 @@ subroutine kk2000_liq_autoconversion(microp_uniform, qcic, &
 
   ! Take variance into account, or use uniform value.
   if (.not. microp_uniform) then
-     prc_coef(:) = var_coef(relvar(:), 2.47_r8)
+     prc_coef(:) = var_coef(relvar(:), micro_mg_autocon_lwp_exp)
   else
      prc_coef(:) = 1._r8
   end if
@@ -723,7 +725,10 @@ subroutine kk2000_liq_autoconversion(microp_uniform, qcic, &
         ! switch for sub-columns, don't include sub-grid qc
 
         prc(i) = prc_coef(i) * &
-             0.01_r8 * 1350._r8 * qcic(i)**2.47_r8 * (ncic(i)*1.e-6_r8*rho(i))**(-1.1_r8)
+             micro_mg_autocon_fact * 1350._r8 * qcic(i)**micro_mg_autocon_lwp_exp * &
+             (ncic(i)*1.e-6_r8*rho(i))**(micro_mg_autocon_nd_exp)
+        !    0.01_r8 * 1350._r8 * qcic(i)**2.47_r8 * (ncic(i)*1.e-6_r8*rho(i))**(-1.1_r8)
+
         nprc(i) = prc(i) * (1._r8/droplet_mass_25um)
         nprc1(i) = prc(i)*ncic(i)/qcic(i)
 

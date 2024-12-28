@@ -95,6 +95,7 @@ module clubb_intr
     rtpthlp_const = 0.01_r8             ! Constant to add to rtpthlp when moments are advected
     
   real(r8), parameter :: unset_r8 = huge(1.0_r8)
+  real(r8), parameter :: meltpt_temp = 268.15_r8
     
   real(r8) :: clubb_timestep = unset_r8  ! Default CLUBB timestep, unless overwriten by namelist
   real(r8) :: clubb_rnevap_effic = unset_r8
@@ -109,12 +110,22 @@ module clubb_intr
   real(r8) :: clubb_C2rt = unset_r8
   real(r8) :: clubb_C2thl = unset_r8
   real(r8) :: clubb_C2rtthl = unset_r8
+  real(r8) :: clubb_C6rt = unset_r8
+  real(r8) :: clubb_c6rtb = unset_r8
+  real(r8) :: clubb_c6rtc = unset_r8
+  real(r8) :: clubb_c6thl = unset_r8
+  real(r8) :: clubb_c6thlb = unset_r8
+  real(r8) :: clubb_c6thlc = unset_r8
   real(r8) :: clubb_C8 = unset_r8
   real(r8) :: clubb_C7 = unset_r8
   real(r8) :: clubb_C7b = unset_r8
   real(r8) :: clubb_Skw_denom_coef = unset_r8
   real(r8) :: clubb_lambda0_stability_coef = unset_r8
   real(r8) :: clubb_mult_coef = unset_r8
+  real(r8) :: clubb_wpxp_L_thresh = unset_r8
+  real(r8) :: clubb_detliq_rad = unset_r8
+  real(r8) :: clubb_detice_rad = unset_r8
+  real(r8) :: clubb_detphase_lowtemp = unset_r8
 
 !  Constant parameters
   logical, parameter, private :: &
@@ -449,9 +460,12 @@ end subroutine clubb_init_cnst
                                 clubb_rnevap_effic
     namelist /clubb_params_nl/ clubb_c11, clubb_c11b, clubb_c14, clubb_mult_coef, clubb_gamma_coef, &
                                clubb_c_K10, clubb_c_K10h, clubb_beta, clubb_C2rt, clubb_C2thl, &
-			       clubb_C2rtthl, clubb_C8, clubb_C7, clubb_C7b, clubb_Skw_denom_coef, &
+                               clubb_C2rtthl, clubb_C8, clubb_C7, clubb_C7b, clubb_Skw_denom_coef, &
+                               clubb_c6rt, clubb_c6rtb, clubb_c6rtc, clubb_c6thl, clubb_c6thlb, clubb_c6thlc, &
+                               clubb_wpxp_L_thresh, &
                                clubb_lambda0_stability_coef, clubb_l_lscale_plume_centered, &
-                               clubb_l_use_ice_latent, clubb_do_liqsupersat, clubb_do_energyfix
+                               clubb_l_use_ice_latent, clubb_do_liqsupersat, clubb_do_energyfix, &
+                               clubb_detliq_rad, clubb_detice_rad, clubb_detphase_lowtemp
 
     !----- Begin Code -----
 
@@ -527,6 +541,20 @@ end subroutine clubb_init_cnst
     if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: clubb_c11b")
     call mpi_bcast(clubb_c14,                    1, mpi_real8,   mstrid, mpicom, ierr)
     if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: clubb_c14")
+    call mpi_bcast(clubb_c6rt,                   1, mpi_real8,   mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: clubb_c6rt")
+    call mpi_bcast(clubb_c6rtb,                  1, mpi_real8,   mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: clubb_c6rtb")
+    call mpi_bcast(clubb_c6rtc,                  1, mpi_real8,   mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: clubb_c6rtc")
+    call mpi_bcast(clubb_c6thl,                 1, mpi_real8,   mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: clubb_c6thl")
+    call mpi_bcast(clubb_c6thlb,                 1, mpi_real8,   mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: clubb_c6thlb")
+    call mpi_bcast(clubb_c6thlc,                 1, mpi_real8,   mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: clubb_c6thlc")
+    call mpi_bcast(clubb_wpxp_L_thresh,          1, mpi_real8,   mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: clubb_wpxp_L_thresh")
     call mpi_bcast(clubb_mult_coef,              1, mpi_real8,   mstrid, mpicom, ierr)
     if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: clubb_mult_coef")
     call mpi_bcast(clubb_gamma_coef,             1, mpi_real8,   mstrid, mpicom, ierr)
@@ -561,6 +589,12 @@ end subroutine clubb_init_cnst
     if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: clubb_do_liqsupersat")
     call mpi_bcast(clubb_do_energyfix,         1, mpi_logical, mstrid, mpicom, ierr)
     if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: clubb_do_energyfix")
+    call mpi_bcast(clubb_detliq_rad, 1, mpi_real8,   mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: clubb_detliq_rad")
+    call mpi_bcast(clubb_detice_rad, 1, mpi_real8,   mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: clubb_detice_rad")
+    call mpi_bcast(clubb_detphase_lowtemp, 1, mpi_real8,   mstrid, mpicom, ierr)
+    if (ierr /= 0) call endrun(sub//": FATAL: mpi_bcast: clubb_detphase_lowtemp")
 
     !  Overwrite defaults if they are true
     if (clubb_history) l_stats = .true.
@@ -639,6 +673,7 @@ end subroutine clubb_init_cnst
     ! These are needed to set parameters
     use clubb_api_module, only: &
          ilambda0_stability_coef, ic_K10, ic_K10h, iC2rtthl, iC7, iC7b, iC8, iC11, iC11b, &
+         iC6rt, iC6rtb, iC6rtc, iC6thl, iC6thlb, iC6thlc, iwpxp_L_thresh, &
          iC14, igamma_coef, imult_coef, ilmin_coef, iSkw_denom_coef, ibeta, &
          iC2rt, iC2thl, iC2rtthl, l_do_expldiff_rtm_thlm, l_Lscale_plume_centered, &
          l_use_ice_latent
@@ -829,6 +864,13 @@ end subroutine clubb_init_cnst
     clubb_params(iC2rt) = clubb_C2rt
     clubb_params(iC2thl) = clubb_C2thl
     clubb_params(ibeta) = clubb_beta
+    clubb_params(iC6rt) = clubb_c6rt
+    clubb_params(iC6rtb) = clubb_c6rtb
+    clubb_params(iC6rtc) = clubb_c6rtc
+    clubb_params(iC6thl) = clubb_c6thl
+    clubb_params(iC6thlb) = clubb_c6thlb
+    clubb_params(iC6thlc) = clubb_c6thlc
+    clubb_params(iwpxp_L_thresh) = clubb_wpxp_L_thresh
     clubb_params(iC7) = clubb_C7
     clubb_params(iC7b) = clubb_C7b
     clubb_params(iC8) = clubb_C8
@@ -1321,6 +1363,7 @@ end subroutine clubb_init_cnst
    real(r8) :: qrl_zm(pverp+1-top_lev)
    real(r8) :: thlp2_rad_out(pverp+1-top_lev)
    real(r8) :: apply_const, rtm_test
+   real(r8) :: dl_rad, di_rad, dt_low
 
    integer                               :: time_elapsed                ! time keep track of stats          [s]
    real(r8), dimension(nparams)          :: clubb_params                ! These adjustable CLUBB parameters (C1, C2 ...)
@@ -1430,6 +1473,10 @@ end subroutine clubb_init_cnst
    !-----------------------------------------------------------------------------------------------!
 
    nlev = pver + 1 - top_lev
+
+   dl_rad = clubb_detliq_rad
+   di_rad = clubb_detice_rad
+   dt_low = clubb_detphase_lowtemp
 
    frac_limit = 0.01_r8
    ic_limit   = 1.e-12_r8
@@ -2654,12 +2701,12 @@ end subroutine clubb_init_cnst
    
    do k=1,pver
       do i=1,ncol
-         if( state1%t(i,k) > 268.15_r8 ) then
+         if( state1%t(i,k) > meltpt_temp ) then
             dum1 = 0.0_r8
-         elseif ( state1%t(i,k) < 238.15_r8 ) then
+         elseif ( state1%t(i,k) < dt_low ) then
             dum1 = 1.0_r8
          else
-            dum1 = ( 268.15_r8 - state1%t(i,k) ) / 30._r8 
+            dum1 = ( meltpt_temp - state1%t(i,k) ) / ( meltpt_temp - dt_low )
          endif
 
          if (zmconv_microp) then
@@ -2667,20 +2714,20 @@ end subroutine clubb_init_cnst
             ptend_loc%q(i,k,ixcldice) = difzm(i,k) + dlf2(i,k) * dum1
 
             ptend_loc%q(i,k,ixnumliq) = dnlfzm(i,k) + 3._r8 * ( dlf2(i,k) * ( 1._r8 - dum1 ) )   &
-                                                   / (4._r8*3.14_r8*10.e-6_r8**3*997._r8)      ! Shallow Convection
+                                                   / (4._r8*3.14_r8*dl_rad**3*997._r8)      ! Shallow Convection
             ptend_loc%q(i,k,ixnumice) = dnifzm(i,k) + 3._r8 * ( dlf2(i,k) * dum1 ) &
-                                                   / (4._r8*3.14_r8*50.e-6_r8**3*500._r8)      ! Shallow Convection
+                                                   / (4._r8*3.14_r8*di_rad**3*500._r8)      ! Shallow Convection
             ptend_loc%s(i,k)          = dlf2(i,k) * dum1 * latice
          else       
 
             ptend_loc%q(i,k,ixcldliq) = dlf(i,k) * ( 1._r8 - dum1 )
             ptend_loc%q(i,k,ixcldice) = dlf(i,k) * dum1
             ptend_loc%q(i,k,ixnumliq) = 3._r8 * ( max(0._r8, ( dlf(i,k) - dlf2(i,k) )) * ( 1._r8 - dum1 ) ) &
-                                     / (4._r8*3.14_r8* 8.e-6_r8**3*997._r8) + & ! Deep    Convection
+                                     / (4._r8*3.14_r8*dl_rad**3*997._r8) + & ! Deep    Convection
                                      3._r8 * (                         dlf2(i,k)    * ( 1._r8 - dum1 ) ) &
                                      / (4._r8*3.14_r8*10.e-6_r8**3*997._r8)     ! Shallow Convection 
             ptend_loc%q(i,k,ixnumice) = 3._r8 * ( max(0._r8, ( dlf(i,k) - dlf2(i,k) )) *  dum1 ) &
-                                     / (4._r8*3.14_r8*25.e-6_r8**3*500._r8) + & ! Deep    Convection
+                                     / (4._r8*3.14_r8*di_rad**3*500._r8) + & ! Deep    Convection
                                      3._r8 * (                         dlf2(i,k)    *  dum1 ) &
                                      / (4._r8*3.14_r8*50.e-6_r8**3*500._r8)     ! Shallow Convection
             ptend_loc%s(i,k)          = dlf(i,k) * dum1 * latice
